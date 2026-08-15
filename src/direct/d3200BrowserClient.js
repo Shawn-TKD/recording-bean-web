@@ -1,4 +1,5 @@
 import { DeviceCrypto } from './crypto.js'
+import { DISCOVERY_MODE, createBluetoothRequestOptions } from './bluetoothDiscovery.js'
 import { muxOggOpus, oggToWav } from './oggOpus.js'
 import {
   NOTIFY_UUID,
@@ -31,8 +32,12 @@ const initialState = {
   recordStatus: 0,
 }
 
-function friendlyBluetoothError(error) {
-  if (error?.name === 'NotFoundError' || /cancel/i.test(error?.message || '')) return '已取消设备选择；再次连接时请选择 soundcore Work'
+function friendlyBluetoothError(error, discoveryMode) {
+  if (error?.name === 'NotFoundError' || /cancel/i.test(error?.message || '')) {
+    return discoveryMode === DISCOVERY_MODE.precise
+      ? '未选择或未发现兼容录音豆；请将设备靠近电脑后重试，也可以改用“显示全部设备”'
+      : '未选择设备；Mac 上录音豆可能显示为“未知或不支持的设备”'
+  }
   if (error?.name === 'SecurityError') return '浏览器拒绝蓝牙权限，请确认页面使用 HTTPS 并允许蓝牙访问'
   if (error?.name === 'NetworkError') return '无法建立蓝牙连接；请关闭飞书 App 或其他正在连接录音豆的程序后重试'
   return error?.message || '蓝牙连接失败'
@@ -73,16 +78,13 @@ export class D3200BrowserClient {
     this.#update({ logs: this.#state.logs })
   }
 
-  async connect() {
+  async connect({ discoveryMode = DISCOVERY_MODE.precise } = {}) {
     if (!window.isSecureContext) throw new Error('浏览器直连需要 HTTPS；localhost 调试除外')
     if (!navigator.bluetooth) throw new Error('当前浏览器不支持 Web Bluetooth，请使用电脑 Chrome/Edge 或 Android Chrome')
     if (this.#server?.connected) return this.refresh()
     this.#update({ connecting: true, error: null })
     try {
-      this.#device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: [SERVICE_UUID],
-      })
+      this.#device = await navigator.bluetooth.requestDevice(createBluetoothRequestOptions(discoveryMode))
       try { localStorage.setItem('recording-bean:last-device-id', this.#device.id) } catch {}
       this.#device.addEventListener('gattserverdisconnected', this.#onDisconnected)
       this.#server = await this.#device.gatt.connect()
@@ -96,7 +98,7 @@ export class D3200BrowserClient {
       await this.refresh()
       return this.snapshot()
     } catch (error) {
-      const message = friendlyBluetoothError(error)
+      const message = friendlyBluetoothError(error, discoveryMode)
       this.#update({ connected: false, connecting: false, error: message })
       this.#log(`连接失败：${message}`, 'error')
       throw new Error(message)
