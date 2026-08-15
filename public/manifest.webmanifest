@@ -1,0 +1,12 @@
+{
+  "name": "录音豆本地整理",
+  "short_name": "录音豆",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#087fe6",
+  "description": "通过浏览器直接读取和整理 soundcore Work 录音。",
+  "icons": [
+    { "src": "/assets/d3200-product.png", "sizes": "any", "type": "image/png", "purpose": "any" }
+  ]
+}
