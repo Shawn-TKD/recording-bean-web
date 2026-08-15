@@ -19,7 +19,7 @@ function previewState() {
   const sizes = [7647000, 2718000, 3930000, 1930000, 5285000]
   return {
     supported: true, connected: true, connecting: false, deviceName: 'soundcore Work', recordStatus: 0,
-    device: { battery: 82, freeMemoryKb: 7.2 * 1024 * 1024, firmwareVersion: '1.2.3' },
+    device: { battery: 80, charging: false, boxBattery: 100, boxCharging: true, freeMemoryKb: 7.2 * 1024 * 1024, firmwareVersion: '04.92' },
     files: sizes.map((sizeBytes, index) => ({ fileId: now - index * 4680, sizeBytes, estimatedDurationMs: sizeBytes, exported: index === 1 })),
     logs: [], error: null, export: null,
   }

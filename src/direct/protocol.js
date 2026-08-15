@@ -117,6 +117,20 @@ function batteryPercent(raw) {
   return value <= 9 ? (value + 1) * 10 : Math.min(value, 100)
 }
 
+export function parseBatteryStatus(payload) {
+  const result = {}
+  if (payload.length > 0) result.battery = batteryPercent(payload[0])
+  if (payload.length > 1) result.boxBattery = batteryPercent(payload[1])
+  return result
+}
+
+export function parseChargingStatus(payload) {
+  const result = {}
+  if (payload.length > 0) result.charging = payload[0] === 1
+  if (payload.length > 1) result.boxCharging = payload[1] === 1
+  return result
+}
+
 export function parseDeviceInfo(payload) {
   const result = {}
   if (payload.length < 3) return result

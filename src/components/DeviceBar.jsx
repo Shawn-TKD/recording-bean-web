@@ -1,4 +1,4 @@
-import { BatteryMedium, Bluetooth, HardDrive, Link2Off, LoaderCircle, Mic2, Pause, Play, RotateCw } from 'lucide-react'
+import { BatteryCharging, BatteryMedium, Bluetooth, HardDrive, Link2Off, LoaderCircle, Mic2, Pause, Play, RotateCw } from 'lucide-react'
 import { formatBytes } from '../utils/format.js'
 
 export function DeviceBar({ state, busy, supportReason, onConnect, onDisconnect, onStart, onPause }) {
@@ -6,6 +6,8 @@ export function DeviceBar({ state, busy, supportReason, onConnect, onDisconnect,
   const freeBytes = Number.isFinite(device?.freeMemoryKb) ? device.freeMemoryKb * 1024 : null
   const isRecording = recordStatus === 1
   const isPaused = recordStatus === 2
+  const BeanBatteryIcon = device?.charging ? BatteryCharging : BatteryMedium
+  const CaseBatteryIcon = device?.boxCharging ? BatteryCharging : BatteryMedium
 
   return (
     <section className="device-bar">
@@ -18,7 +20,8 @@ export function DeviceBar({ state, busy, supportReason, onConnect, onDisconnect,
       </div>
 
       <div className="device-metrics" aria-label="设备状态">
-        <div><BatteryMedium size={17} /><span>电量</span><strong>{device?.battery != null ? `${device.battery}%` : '—'}</strong></div>
+        <div className={device?.charging ? 'is-charging' : ''}><BeanBatteryIcon size={17} /><span>录音豆电量</span><strong>{device?.battery != null ? `${device.battery}%` : '—'}</strong></div>
+        <div className={device?.boxCharging ? 'is-charging' : ''}><CaseBatteryIcon size={17} /><span>充电仓电量</span><strong>{device?.boxBattery != null ? `${device.boxBattery}%` : '—'}</strong></div>
         <div><HardDrive size={17} /><span>可用空间</span><strong>{formatBytes(freeBytes)}</strong></div>
         <div><RotateCw size={17} /><span>固件</span><strong>{device?.firmwareVersion || '—'}</strong></div>
       </div>

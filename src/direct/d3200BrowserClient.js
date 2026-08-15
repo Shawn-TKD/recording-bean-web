@@ -9,6 +9,8 @@ import {
   encryptHandshake,
   getDeviceInfo,
   listFilesWithEnd,
+  parseBatteryStatus,
+  parseChargingStatus,
   parseDeviceInfo,
   parseFileList,
   pauseRecording,
@@ -137,6 +139,12 @@ export class D3200BrowserClient {
     if (packet.cmdType === 0x01 && packet.cmdId === 0x01) {
       const device = parseDeviceInfo(packet.payload)
       this.#update({ device, recordStatus: device.recordStatus ?? this.#state.recordStatus, error: null })
+    } else if (packet.cmdType === 0x01 && packet.cmdId === 0x03) {
+      const battery = parseBatteryStatus(packet.payload)
+      this.#update({ device: { ...(this.#state.device || {}), ...battery }, error: null })
+    } else if (packet.cmdType === 0x01 && packet.cmdId === 0x04) {
+      const charging = parseChargingStatus(packet.payload)
+      this.#update({ device: { ...(this.#state.device || {}), ...charging }, error: null })
     } else if (packet.cmdType === 0x18 && packet.cmdId === 0x82 && packet.payload.length) {
       const recordStatus = packet.payload[0]
       if (recordStatus >= 0 && recordStatus <= 2) {
