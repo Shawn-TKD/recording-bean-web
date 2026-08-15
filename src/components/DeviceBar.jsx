@@ -10,7 +10,7 @@ export function DeviceBar({ state, busy, supportReason, onConnect, onDisconnect,
   const CaseBatteryIcon = device?.boxCharging ? BatteryCharging : BatteryMedium
 
   return (
-    <section className="device-bar">
+    <section className={`device-bar ${connected ? 'is-connected' : 'is-disconnected'}`}>
       <div className="device-identity">
         <div className="device-product"><img src="/assets/d3200-product.png" alt="银色飞书录音豆 D3200" /></div>
         <div>
@@ -26,11 +26,16 @@ export function DeviceBar({ state, busy, supportReason, onConnect, onDisconnect,
         <div><RotateCw size={17} /><span>固件</span><strong>{device?.firmwareVersion || '—'}</strong></div>
       </div>
 
-      <div className="device-actions">
+      <div className={`device-actions ${connected ? '' : 'discovery-actions'}`}>
         {!connected ? (
-          <button className="button primary" disabled={!state.supported || busy === 'connect'} onClick={onConnect}>
-            {busy === 'connect' ? <LoaderCircle className="spin" size={17} /> : <Bluetooth size={17} />}连接录音豆
-          </button>
+          <>
+            <button className="button primary" disabled={!state.supported || Boolean(busy)} onClick={() => onConnect('precise')}>
+              {busy === 'connect-precise' ? <LoaderCircle className="spin" size={17} /> : <Bluetooth size={17} />}精确搜索
+            </button>
+            <button className="button subtle" disabled={!state.supported || Boolean(busy)} onClick={() => onConnect('all')}>
+              {busy === 'connect-all' ? <LoaderCircle className="spin" size={17} /> : <Bluetooth size={17} />}全部设备
+            </button>
+          </>
         ) : (
           <button className="button subtle" onClick={onDisconnect}><Link2Off size={16} />断开连接</button>
         )}

@@ -26,8 +26,14 @@ function previewState() {
 }
 
 function DirectApp() {
-  const isPreview = import.meta.env.DEV && new URLSearchParams(window.location.search).has('preview')
-  const [deviceState, setDeviceState] = useState(() => isPreview ? previewState() : browserClient.snapshot())
+  const previewParams = new URLSearchParams(window.location.search)
+  const isPreview = import.meta.env.DEV && previewParams.has('preview')
+  const previewDisconnected = isPreview && previewParams.get('state') === 'disconnected'
+  const [deviceState, setDeviceState] = useState(() => {
+    if (!isPreview) return browserClient.snapshot()
+    if (!previewDisconnected) return previewState()
+    return { ...previewState(), connected: false, device: null, files: [] }
+  })
   const [workspace, setWorkspace] = useState(loadWorkspace)
   const [activeView, setActiveView] = useState('device')
   const [selectedId, setSelectedId] = useState(null)
@@ -165,9 +171,15 @@ function DirectApp() {
     }
   }
 
-  async function connect() {
-    await run('connect', async () => {
-      await browserClient.connect()
+  async function connect(discoveryMode = 'precise') {
+    if (isPreview) {
+      setNotice(discoveryMode === 'precise'
+        ? '预览：将按 D3200 服务 UUID 精确搜索，不依赖设备名称。'
+        : '预览：将显示附近全部蓝牙设备，Mac 上录音豆可能显示为未知设备。')
+      return
+    }
+    await run(`connect-${discoveryMode}`, async () => {
+      await browserClient.connect({ discoveryMode })
       const first = browserClient.snapshot().files[0]
       if (first) setSelectedId(first.fileId)
     })
@@ -345,7 +357,20 @@ function DirectApp() {
                 />
               </div>
             ) : (
-              <section className="connect-empty"><CloudOff size={30} /><h2>先连接你的录音豆</h2><p>浏览器会直接读取设备；音频不会经过本站服务器。首次连接时，请在蓝牙列表中选择你的录音豆。</p><button className="button primary" disabled={!deviceState.supported || Boolean(busy)} onClick={connect}>连接录音豆</button></section>
+              <section className="connect-empty">
+                <CloudOff size={30} />
+                <h2>先连接你的录音豆</h2>
+                <p>推荐按 D3200 服务精确搜索，不依赖设备名称。浏览器会直接读取设备，音频不会经过本站服务器。</p>
+                <div className="connect-actions">
+                  <button className="button primary" disabled={!deviceState.supported || Boolean(busy)} onClick={() => connect('precise')}>
+                    {busy === 'connect-precise' ? '正在搜索…' : '精确搜索录音豆'}
+                  </button>
+                  <button className="button subtle" disabled={!deviceState.supported || Boolean(busy)} onClick={() => connect('all')}>
+                    {busy === 'connect-all' ? '正在打开…' : '显示全部设备'}
+                  </button>
+                </div>
+                <small>Mac 上录音豆可能显示为“未知或不支持的设备”；精确搜索仍能通过服务 UUID 找到它。</small>
+              </section>
             )}
           </>
         )}
